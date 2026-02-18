@@ -12,11 +12,22 @@ from langchain.vectorstores import FAISS
 from langchain.memory import ConversationBufferMemory
 from langchain.chains import ConversationalRetrievalChain
 from htmlTemplates import css, bot_template, user_template
-import nltk
+
 import torch
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
 
-nltk.download("punkt")
+import nltk
+
+try:
+    nltk.data.find('tokenizers/punkt')
+except LookupError:
+    nltk.download('punkt')
+
+try:
+    nltk.data.find('tokenizers/punkt_tab')
+except LookupError:
+    nltk.download('punkt_tab')
+
 
 # ================= NLI LOADING ================= #
 

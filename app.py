@@ -1,5 +1,5 @@
 import streamlit as st
-st.set_page_config(page_title="Chat with multiple PDFs",
+st.set_page_config(page_title="AI-Powered PDF Q&A with NLA",
                        page_icon=":books:")
 from dotenv import load_dotenv
 from PyPDF2 import PdfReader

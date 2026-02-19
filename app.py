@@ -1,5 +1,5 @@
 import streamlit as st
-st.set_page_config(page_title="AI-Powered PDF Q&A with NLA",
+st.set_page_config(page_title="Chat with multiple PDFs",
                        page_icon=":books:")
 from dotenv import load_dotenv
 from PyPDF2 import PdfReader
@@ -12,25 +12,17 @@ from langchain.vectorstores import FAISS
 from langchain.memory import ConversationBufferMemory
 from langchain.chains import ConversationalRetrievalChain
 from htmlTemplates import css, bot_template, user_template
-
+import nltk
 import torch
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
 
-import nltk
-
-try:
-    nltk.data.find('tokenizers/punkt')
-except LookupError:
-    nltk.download('punkt')
-
-try:
-    nltk.data.find('tokenizers/punkt_tab')
-except LookupError:
-    nltk.download('punkt_tab')
-
+nltk.download("punkt")
 
 # ================= NLI LOADING ================= #
-
+if "conversation" not in st.session_state:
+    st.session_state.conversation = None
+if "chat_history" not in st.session_state:
+    st.session_state.chat_history = []
 @st.cache_resource
 def load_nli_model():
     model_name = "roberta-large-mnli"
@@ -149,14 +141,17 @@ def handle_userinput(user_question):
     # Confidence score
     confidence = (len(verified_claims) / total_claims) * 100 if total_claims > 0 else 0
 
-    st.session_state.chat_history = response['chat_history']
+   # Store new messages manually
+    st.session_state.chat_history.append(("user", user_question))
+    st.session_state.chat_history.append(("bot", verified_answer))
 
-    # Display chat
-    for i, message in enumerate(st.session_state.chat_history):
-        if i % 2 == 0:
-            st.write(user_template.replace("{{MSG}}", message.content), unsafe_allow_html=True)
+    # Display full history
+    for role, message in st.session_state.chat_history:
+        if role == "user":
+            st.write(user_template.replace("{{MSG}}", message), unsafe_allow_html=True)
         else:
-            st.write(bot_template.replace("{{MSG}}", verified_answer), unsafe_allow_html=True)
+            st.write(bot_template.replace("{{MSG}}", message), unsafe_allow_html=True)
+
 
     st.markdown(f"**Verification Confidence:** {confidence:.2f}%")
 
@@ -169,10 +164,7 @@ def main():
 
     st.write(css, unsafe_allow_html=True)
 
-    if "conversation" not in st.session_state:
-        st.session_state.conversation = None
-    if "chat_history" not in st.session_state:
-        st.session_state.chat_history = None
+
 
     st.header("Chat with multiple PDFs :books:")
     user_question = st.text_input("Ask a question about your documents:")
